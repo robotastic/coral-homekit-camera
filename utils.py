@@ -46,16 +46,21 @@ def retrain(model='./models/mobilenet_v1_1.0_224_l2norm_quant_edgetpu.tflite', o
         train_input.append(np.array(ret))
         labels_map[class_id] = set
 
-    if (len(samples) == 0) or not (("background" in train_set.values()) and ("detection" in train_set.keys()) ):
+    if (len(samples) == 0) or not (("background" in train_set.keys()) and ("detection" in train_set.keys()) ):
+        print("Training data not good")
         return False
 
     else:
+        print("Enough data, going to try and retrain")
         engine = ImprintingEngine(model)
+        print("Engines ready")
         label_map = engine.TrainAll(train_input)
-        with open(map_file, 'w') as outfile:
-            json.dump(label_map, outfile)
-
+        print("ReTraining complete")
+        #with open(map_file, 'w') as outfile:
+        #    json.dump(label_map, outfile)
+        
         engine.SaveModel(out_file)
+        print("Model Saved")
         return True
 
 
