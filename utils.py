@@ -11,28 +11,47 @@ from tinydb import TinyDB
 import uuid
 import picamera
 import io
-
+import os
 
 def get_labels():
-    labels = json.loads(open("./models/map.json").read())
-    labels = dict((v,k) for k,v in labels.items())
-    return labels
+    if os.path.exists("./models/map.json"):
+        with open("./models/map.json") as f:
+            try:    
+                labels = json.loads(f.read())
+                labels = dict((v,k) for k,v in labels.items())
+                return labels
+            except:
+                return False
+    else:
+        return False
 
-
-def retrain(model='./models/mobilenet_v1_1.0_224_quant_embedding_extractor_edgetpu.tflite', out_file='./models/classify.tflite' , map_file='./models/map.json'):
+def retrain(model='./models/mobilenet_v1_1.0_224_l2norm_quant_edgetpu.tflite', out_file='./models/classify.tflite' , map_file='./models/map.json'):
     train_dict = defaultdict(lambda: [])
+    train_input = []
+    labels_map = {}
+    train_set = defaultdict(lambda: [])
     pics = TinyDB("./pics.json")
+    for pic in pics:
+        train_set[pic["class"]].append(pic["img"])
+        print(pic)
     samples = pics.all()
-    for s in samples:
-        img=Image.open("./pics/{}.jpg".format(s["img"])).resize((224,224))
-        train_dict[s["class"]].append(np.array(img).flatten())
+    for class_id, (set) in enumerate(train_set):
+        print('Processing Class: ', set)
+        ret = []
+        for filename in train_set[set]:
+            img=Image.open("./pics/{}.jpg".format(filename)).resize((224,224))
+            ret.append(
+                np.asarray(img).flatten()
+            )
+        train_input.append(np.array(ret))
+        labels_map[class_id] = set
 
-    if (len(samples) == 0) or not (("background" in train_dict.keys()) and ("detection" in train_dict.keys()) ):
+    if (len(samples) == 0) or not (("background" in train_set.values()) and ("detection" in train_set.keys()) ):
         return False
 
     else:
         engine = ImprintingEngine(model)
-        label_map = engine.TrainAll(train_dict)
+        label_map = engine.TrainAll(train_input)
         with open(map_file, 'w') as outfile:
             json.dump(label_map, outfile)
 

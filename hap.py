@@ -23,7 +23,7 @@ class MotionSensor(Accessory):
         super().__init__(*args, **kwargs)
         serv_motion = self.add_preload_service('MotionSensor')
         self.char_detected = serv_motion.configure_char('MotionDetected')
-        self.engine = ClassificationEngine("./models/classify.tflite")
+        self.engine = False #ClassificationEngine("./models/classify.tflite")
         self.is_trained = retrain()
         self.labels = get_labels()
         self.is_running = True
@@ -40,6 +40,7 @@ class MotionSensor(Accessory):
                 detection=False
                 img = camera.returnPIL()
                 output = self.engine.ClassifyWithImage(img)
+                print("Detection: ", output[0][0])
                 if output[0][0] == int(self.labels["detection"]):
                     detection = True
                     logging.info("detection triggered")
