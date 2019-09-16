@@ -39,11 +39,11 @@ class MotionSensor():
                 detection=False
                 img = camera.returnPIL()
                 output = self.engine.ClassifyWithImage(img)
-                for detect in output:
-                    print("Detection: ", detect)
-               # if output[0][0] == int(self.labels["detection"]):
-               #     detection = True
-               #     logging.info("detection triggered")
+                label = self.labels[str(output[0][0])]
+
+                if label == "detection":
+                    detection = True
+                    logging.info("detection triggered, confidence: {0}".format(output[0][1]))
                 self._detected(detection)
 
             if app_state.last_state == "retrain":

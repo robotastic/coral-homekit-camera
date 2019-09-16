@@ -18,7 +18,7 @@ def get_labels():
         with open("./models/map.json") as f:
             try:    
                 labels = json.loads(f.read())
-                labels = dict((v,k) for k,v in labels.items())
+                #labels = dict((v,k) for k,v in labels.items())
                 return labels
             except:
                 return False
@@ -36,7 +36,7 @@ def retrain(model='./models/mobilenet_v1_1.0_224_l2norm_quant_edgetpu.tflite', o
         print(pic)
     samples = pics.all()
     for class_id, (set) in enumerate(train_set):
-        print('Processing Class: ', set)
+        print('Processing Class: ', set, class_id)
         ret = []
         for filename in train_set[set]:
             img=Image.open("./pics/{}.jpg".format(filename)).resize((224,224))
@@ -54,11 +54,11 @@ def retrain(model='./models/mobilenet_v1_1.0_224_l2norm_quant_edgetpu.tflite', o
         print("Enough data, going to try and retrain")
         engine = ImprintingEngine(model)
         print("Engines ready")
-        label_map = engine.TrainAll(train_input)
+        engine.TrainAll(train_input)
         print("ReTraining complete")
-        #with open(map_file, 'w') as outfile:
-        #    json.dump(label_map, outfile)
-        
+        with open("./models/map.json", 'w') as outfile:
+            json.dump(labels_map, outfile)
+        print("Saved Labels")
         engine.SaveModel(out_file)
         print("Model Saved")
         return True
@@ -120,6 +120,7 @@ class Camera(object):
     def __init__(self):
         self.cam = picamera.PiCamera()
         self.cam.resolution = (640, 480)
+        self.cam.vflip = True
         self.pics = TinyDB("./pics.json")
 
     def collect(self, pclass):
